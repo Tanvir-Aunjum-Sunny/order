@@ -1,11 +1,12 @@
 import React from "react"
 import { inject, observer } from "mobx-react"
-import { Grid, Cell, Textfield, Checkbox, DataTable, TableHeader, Card, CardText, CardTitle, IconButton, CardMenu, Button, CardActions } from "react-mdl"
+import { Grid, Badge, Cell, Textfield, Checkbox, DataTable, TableHeader, Card, CardText, CardTitle, Chip, IconButton, CardMenu, Button, CardActions, Tabs, Tab } from "react-mdl"
 
 import { map, findIndex } from 'lodash'
 
 @inject('orderStore')
 @inject('dishStore')
+@inject('dishTypeStore')
 @observer
 export default class OrdersDetails extends React.Component {
   constructor(props){
@@ -19,7 +20,8 @@ export default class OrdersDetails extends React.Component {
       dishes: [],
       order: undefined,
       filter: "",
-      offset: 0
+      offset: 0,
+      activeTab: 0
     }
   }
 
@@ -35,7 +37,8 @@ export default class OrdersDetails extends React.Component {
           made: order.made, 
           dishes: order.dishes.map(d => Object.assign({}, d)),
           order: order,
-          offset: 0
+          offset: 0,
+          activeTab: 0
         })
       }
     }
@@ -147,11 +150,9 @@ export default class OrdersDetails extends React.Component {
     const allRows = allDishes.map(d => {
       return({
         id: d._id, 
-        name: d.name, 
-        add: <IconButton name="add" onClick={addDish(d._id)} /> 
-      })}).filter(e => matchesFilter.test(e.name))
-
-      const dataRows = allRows.slice(this.state.offset, this.state.offset + 5)
+        name: d.name,
+        type: d.type
+      })}).filter(e => matchesFilter.test(e.name) && this.props.dishTypeStore.dishTypes[this.state.activeTab]._id === e.type)
 
     return (
       <Grid className="order-details">
@@ -160,7 +161,45 @@ export default class OrdersDetails extends React.Component {
             <CardTitle><IconButton name="close" onClick={goBack}/> Order</CardTitle>
             <CardText>
               <Grid>
-                <Cell col={4}>
+                <h4>Available Dishes</h4>
+                <Cell col={12}>
+                  <Tabs activeTab={this.state.activeTab} onChange={(tabId, props) => { console.warn(props); this.setState({ activeTab: tabId }) }} tabBarProps ripple>
+                    {this.props.dishTypeStore.dishTypes.map(d => <Tab key={d._id}> {d.name}</Tab>)}
+                  </Tabs>
+                  <section>
+                    <div className="content">
+                      {
+                        allRows.map((r, i) => <Chip key={r.id} onClick={addDish(r.id)}>{r.name}</Chip>
+                        )
+                      }
+                    </div>
+                  </section>
+                </Cell>
+              </Grid>        
+              <Grid>
+                <Cell col={6} >
+                  <div class="selected-dishes">
+                    <h4>Selected Dishes</h4>
+                    <DataTable
+                      rowKeyColumn="id"
+                      rows={this.state.dishes.map(d => {
+                        return (
+                          {
+                            id: d.id,
+                            name: this.props.dishStore.getDish(d.id).name,
+                            quantity: d.quantity,
+                            add: <IconButton name="add" onClick={addDish(d.id)} />,
+                            remove: <IconButton name="remove" onClick={removeDish(d.id)} />
+                          })
+                      })} >
+                      <TableHeader numeric name="remove"></TableHeader>
+                      <TableHeader numeric name="quantity"></TableHeader>
+                      <TableHeader numeric name="add" ></TableHeader>
+                      <TableHeader name="name"></TableHeader>
+                    </DataTable>
+                  </div>
+                </Cell>
+                <Cell col={6}>
                   <h4>Guest Info</h4>
                   <Textfield
                     onChange={handleTableChange}
@@ -188,46 +227,7 @@ export default class OrdersDetails extends React.Component {
 
                   <Checkbox label="Made" ripple checked={this.state.made} onClick={handleMadeChage} onChange={handleMadeChage}/>
                 </Cell>
-                <Cell col={4}>
-                  <h4>Available Dishes</h4>
-                  <Button class="float-right" onClick={pushOffset} disabled={(this.state.offset + 5) > allRows.length}>Next</Button> 
-                  <Button class="float-right" onClick={pullOffset} disabled={(this.state.offset - 5) < 0}>Previous</Button> 
-                  <Textfield
-                    onChange={handleFilterChange}
-                    label="Filter"
-                    floatingLabel
-                    value={this.state.filter}
-                  />
-
-                  <DataTable
-                    rowKeyColumn="id"
-                    rows={dataRows}
-                  >
-                    <TableHeader name="add" ></TableHeader>
-                    <TableHeader name="name" tooltip="The Dish Name">Name</TableHeader>
-                  </DataTable>
-
-                </Cell>
-                <Cell col={4} >
-                  <div class="selected-dishes">
-                    <h4>Selected Dishes</h4>
-                    <DataTable
-                      rowKeyColumn="id"
-                      rows={ this.state.dishes.map(d => 
-                      { return(
-                        {id: d.id,
-                         name: this.props.dishStore.getDish(d.id).name,
-                         quantity: d.quantity,
-                         add: <IconButton name="add" onClick={addDish(d.id)}/>,
-                         remove: <IconButton name="remove" onClick={removeDish(d.id)}/> })})} >
-                      <TableHeader numeric name="remove"></TableHeader>
-                      <TableHeader numeric name="quantity"></TableHeader>
-                      <TableHeader numeric name="add" ></TableHeader>
-                      <TableHeader name="name"></TableHeader>
-                    </DataTable>
-                  </div>
-                </Cell>
-              </Grid>          
+              </Grid>  
             </CardText>
             <CardActions border>
               <Button colored onClick={saveOrder}>Save</Button>
