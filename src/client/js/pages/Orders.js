@@ -14,6 +14,7 @@ export default class Orders extends React.Component {
     return (
       <div class="orders masonry-layout">
         { orders }
+        <div class="spacer" />
         
         <Link to="/orderDetails">
           <FABButton colored ripple raised id="add-order">
