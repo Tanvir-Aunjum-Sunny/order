@@ -1,5 +1,5 @@
 import React from "react";
-import { Textfield, Card, IconButton, Button, CardTitle, CardText, CardMenu, Grid, Cell } from 'react-mdl';
+import { Textfield, Card, IconButton, Button, CardTitle, CardText, CardMenu, Grid, Cell, ProgressBar } from 'react-mdl';
 import { inject } from "mobx-react"
 
 @inject('dishStore')
@@ -25,7 +25,8 @@ export default class PayOrder extends React.Component {
     this.state = {
       amountPayed: "",
       order: order,
-      total: total
+      total: total,
+      processing: false
     }
 
     this.goBack = this.goBack.bind(this)
@@ -44,13 +45,18 @@ export default class PayOrder extends React.Component {
   }
 
   payBill(){
+    this.setState({processing: true})
     this.state.order.update({hasPayed: true},
       () => {
+        this.setState({ processing: false })
         this.goBack(); 
         this.props.orderStore.undoText = `Payed ${this.state.order.name}'s bill`
         this.props.orderStore.undoAction = () => {this.state.order.update({hasPayed: false}, () => {}, () => {})}  
       }, 
-      (err) => {console.error(err)})
+      (err) => {
+        this.setState({ processing: false });
+        console.error(err)}
+      )
   }
 
   render() {
@@ -67,6 +73,7 @@ export default class PayOrder extends React.Component {
         <Cell col={12}>
           <Card shadow={1} >
             <CardTitle><IconButton name="close" onClick={this.goBack}/>Pay {this.state.order ? `${this.state.order.name}'s` : ""} Bill</CardTitle>
+            {this.state.processing ? <ProgressBar indeterminate />: undefined }
             <CardText>
               <Textfield
                 label="Total"
@@ -94,7 +101,7 @@ export default class PayOrder extends React.Component {
               />
             </CardText>
             <CardMenu>
-              <Button type='button' onClick={this.payBill.bind(this)} accent>Pay</Button>
+              <Button type='button' onClick={this.payBill.bind(this)} accent disabled={this.state.processing}>Pay</Button> 
             </CardMenu>
           </Card>
         </Cell>
