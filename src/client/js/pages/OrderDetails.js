@@ -1,6 +1,6 @@
 import React from "react"
 import { inject, observer } from "mobx-react"
-import { Grid, Badge, Cell, Textfield, Checkbox, DataTable, TableHeader, Card, CardText, CardTitle, Chip, IconButton, CardMenu, Button, CardActions, Tabs, Tab } from "react-mdl"
+import { Grid, Badge, Cell, Textfield, Checkbox, DataTable, TableHeader, Card, CardText, CardTitle, Chip, IconButton, CardMenu, Button, CardActions, Tabs, Tab, ProgressBar } from "react-mdl"
 
 import { map, findIndex } from 'lodash'
 
@@ -21,7 +21,8 @@ export default class OrdersDetails extends React.Component {
       order: undefined,
       filter: "",
       offset: 0,
-      activeTab: 0
+      activeTab: 0,
+      processing: false
     }
   }
 
@@ -107,15 +108,27 @@ export default class OrdersDetails extends React.Component {
     if (!name || dishes.length == 0 || !table || isNaN(parseFloat(table)))
       return
 
+    this.setState({processing: true})
+
     if (this.props.match.params.id){
       order.update({id: order._id, name: name, dishes: dishes, table: table, notes: notes, made: made}, 
-        () => { this.goBack() }, 
-        (err) => { console.error(err)}
+        () => { 
+          this.setState({ processing: false })
+          this.goBack() }, 
+        (err) => { 
+          this.setState({ processing: false })
+          console.error(err)}
       )
     } else {
       this.props.orderStore.add({table, name, notes, made, dishes }, 
-        () => { this.goBack() }, 
-        (err) => { console.error(err)}
+        () => { 
+          this.setState({ processing: false })
+          this.goBack() 
+        }, 
+        (err) => { 
+          this.setState({ processing: false })
+          console.error(err)
+        }
       )
     }
   }
@@ -229,8 +242,9 @@ export default class OrdersDetails extends React.Component {
                 </Cell>
               </Grid>  
             </CardText>
+            { this.state.processing ? <ProgressBar indeterminate /> : undefined }
             <CardActions border>
-              <Button colored onClick={saveOrder}>Save</Button>
+              <Button colored onClick={saveOrder} disabled={this.state.processing}>Save</Button>
             </CardActions>
           </Card>
         </Cell>
