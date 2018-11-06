@@ -3,7 +3,7 @@
 Order is an open-source fullstack JavaScript application, with a Node.js MongoDB serverside, and ReactJS on the client side.
 The project is a simple ordering system that lets an organization add their purchasable items, and create orders for said items. 
 
-
+This is the legacy Version. The newest version was implemented with GraphQL.
 ## Getting Started TL;DR: 
 
 ### Install
